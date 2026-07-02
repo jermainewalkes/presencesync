@@ -1,0 +1,7 @@
+{
+  "_comment": "Org admins: copy to org-config.json, fill in, and distribute INTERNALLY only (contains your Slack client secret - never commit it). Users drop it next to the app before first run.",
+  "ms_tenant_id": "",
+  "ms_client_id": "",
+  "slack_client_id": "",
+  "slack_client_secret": ""
+}

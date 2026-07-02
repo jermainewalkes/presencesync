@@ -1,0 +1,26 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# py2app build output
+build/
+dist/
+
+# Generated app-icon intermediate (the .icns is committed; the iconset isn't)
+resources/*.iconset/
+
+# macOS
+.DS_Store
+
+# Old script + its plaintext secrets (rotate these; never commit)
+legacy/
+
+# Runtime logs (secrets live in the Keychain, not on disk)
+*.log
+logs/
+
+# Org credential seed (contains the Slack client secret)
+org-config.json

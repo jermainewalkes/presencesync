@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PresenceSync — Setup Guide</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    max-width: 740px; margin: 0 auto; padding: 40px 24px 90px;
+    line-height: 1.62; color: #1d1d1f; background: #ffffff;
+  }
+  h1 { font-size: 30px; margin-bottom: .2em; }
+  .lede { color: #6e6e73; font-size: 17px; margin-top: 0; }
+  h2 { margin-top: 2.3em; padding-bottom: .3em; border-bottom: 1px solid #e6e6e8; font-size: 21px; }
+  .num { display:inline-block; min-width:1.6em; color:#8a8a8e; }
+  code { background:#f0f0f2; padding:.12em .42em; border-radius:5px; font-size:.9em; }
+  ol { padding-left: 1.4em; } li { margin: .55em 0; }
+  a { color: #0071e3; text-decoration: none; } a:hover { text-decoration: underline; }
+  .card { background:#f6f6f7; border:1px solid #e6e6e8; border-radius:12px; padding:14px 18px; margin:1.1em 0; }
+  .tip  { border-left: 4px solid #34c759; }
+  .warn { border-left: 4px solid #ff9f0a; }
+  footer { margin-top: 3em; color:#8a8a8e; font-size: 13px; }
+  @media (prefers-color-scheme: dark) {
+    body { background:#1c1c1e; color:#e8e8ea; }
+    .lede { color:#9a9a9e; }
+    h2 { border-bottom-color:#3a3a3c; }
+    code { background:#2c2c2e; }
+    .card { background:#2c2c2e; border-color:#3a3a3c; }
+    a { color:#6ab0ff; }
+    footer { color:#7a7a7e; }
+  }
+</style>
+</head>
+<body>
+  <h1>PresenceSync — Setup Guide</h1>
+  <p class="lede">Keep your Microsoft Teams presence and your Slack status in sync, both ways,
+  on macOS or Windows. Setup is a one-time job — register an app with Microsoft and one with
+  Slack, then connect them here. About 15 minutes. If your organisation already has the apps
+  registered, skip to step 3.</p>
+
+  <div class="card warn"><strong>Before you start:</strong> both steps need consent from an
+  administrator of your Microsoft 365 tenant and your Slack workspace. If you're not an admin,
+  you'll need one to approve the apps.</div>
+
+  <h2>1 · Microsoft (Teams)</h2>
+  <p>In the <a href="https://portal.azure.com">Azure portal</a> → <strong>App registrations</strong>:</p>
+  <ol>
+    <li>Open your PresenceSync app registration (or create a new one).</li>
+    <li><strong>Authentication</strong> → Add a platform → <strong>Mobile &amp; desktop applications</strong>
+        → add the redirect URI <code>http://localhost</code>, and turn on
+        <strong>"Allow public client flows"</strong>.</li>
+    <li><strong>API permissions</strong> → Add a permission → Microsoft Graph → <strong>Delegated</strong>
+        → add <code>Presence.Read</code> and <code>Presence.ReadWrite</code>.</li>
+    <li>Click <strong>Grant admin consent</strong> for your tenant.</li>
+    <li>From <strong>Overview</strong>, copy the <strong>Application (client) ID</strong> and the
+        <strong>Directory (tenant) ID</strong> — you'll paste these into PresenceSync.</li>
+  </ol>
+
+  <h2>2 · Slack</h2>
+  <p>At <a href="https://api.slack.com/apps">api.slack.com/apps</a>:</p>
+  <ol>
+    <li><strong>Create New App</strong> → From scratch → name it <em>PresenceSync</em> → pick your workspace.</li>
+    <li><strong>OAuth &amp; Permissions</strong> → <strong>Redirect URLs</strong> → add exactly
+        <code>http://localhost:53682/callback</code> → Save URLs.</li>
+    <li>Same page → <strong>User Token Scopes</strong> → add <code>users.profile:read</code>,
+        <code>users.profile:write</code>, and <code>users:read</code>.</li>
+    <li><strong>Install to Workspace</strong> and approve (an admin may need to approve the app).</li>
+    <li><strong>Basic Information</strong> → App Credentials → copy the <strong>Client ID</strong> and
+        <strong>Client Secret</strong>.</li>
+  </ol>
+  <div class="card tip"><strong>Token rotation is optional</strong> — PresenceSync auto-refreshes your
+  Slack token either way, so you never have to fetch a key again after this.</div>
+
+  <h2>3 · Connect in the app</h2>
+  <ol>
+    <li>Launch PresenceSync — on first run the <strong>Settings</strong> window opens automatically
+        (or click the menu-bar/tray icon → <strong>Settings…</strong>).</li>
+    <li>Enter your Microsoft <strong>Tenant ID</strong> and <strong>Client ID</strong>, and your Slack
+        <strong>Client ID</strong> and <strong>Client Secret</strong>, then click <strong>Save</strong>.
+        (If you were given an <code>org-config.json</code>, drop it in the project folder before
+        first run and these fields fill themselves.)</li>
+    <li>Click <strong>Connect Microsoft</strong>, then <strong>Connect Slack</strong> — each opens a
+        browser window to sign in. Your tokens are stored in the OS keychain (macOS Keychain / Windows Credential Locker).</li>
+    <li>Click <strong>Test connection</strong> — you want both lines to report OK.</li>
+    <li>Turn on <strong>Start at login</strong> from the menu so it's always running.</li>
+  </ol>
+  <p>The menu-bar/tray icon shows health at a glance: the plain glyph when all's well, an
+  <strong>amber</strong> dot if something's expiring, a <strong>red</strong> dot if it needs attention.</p>
+
+  <h2>For organisation admins</h2>
+  <p>Register both apps once — every user in your Microsoft tenant and Slack workspace can then
+  use the same four IDs (each person still signs in as themselves). Copy
+  <code>org-config.example.json</code> to <code>org-config.json</code>, fill in the values, and
+  share it <strong>internally only</strong> — it contains your Slack client secret, so never
+  publish or commit it.</p>
+
+  <h2>Troubleshooting</h2>
+  <ol>
+    <li><strong>Slack sign-in fails instantly</strong> — the redirect URL must be exactly
+        <code>http://localhost:53682/callback</code>, and the Client ID + Secret must be saved first.</li>
+    <li><strong>Teams won't go Busy from a Slack huddle</strong> — check that <code>Presence.ReadWrite</code>
+        has admin consent, and that you're signed into a Teams client.</li>
+    <li><strong>Red dot / "reconnect needed"</strong> — open Settings and click Connect again.</li>
+    <li><strong>Keychain prompts</strong> — click <em>Always Allow</em>; that's where your tokens live.</li>
+  </ol>
+
+  <footer>PresenceSync · this guide is also available any time from the menu-bar/tray icon → Setup Guide.</footer>
+</body>
+</html>
