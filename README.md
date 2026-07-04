@@ -8,6 +8,7 @@
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![Tests](https://img.shields.io/badge/tests-43%20passing-brightgreen.svg)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20this%20project-ff5e5b.svg?logo=ko-fi&logoColor=white)](https://ko-fi.com/jwalkes)
 
 A menu-bar / system-tray app that keeps your **Microsoft Teams** presence and your
 **Slack** status in sync, both directions, with browser sign-in and fully automatic
@@ -121,6 +122,11 @@ storage — platform-independent), [`presencesync/macos`](presencesync/macos) (r
 menu-bar app), [`presencesync/windows`](presencesync/windows) (pystray tray app).
 
 A native `.app` can be built on macOS with `pip install py2app && python setup.py py2app`.
+
+## Support
+
+PresenceSync is free and MIT-licensed. If it saves you some status-juggling, you can
+[support the project on Ko-fi](https://ko-fi.com/jwalkes).
 
 ## License
 
