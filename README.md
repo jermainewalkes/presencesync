@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![Tests](https://img.shields.io/badge/tests-43%20passing-brightgreen.svg)
+[![Tests](https://github.com/jermainewalkes/presencesync/actions/workflows/tests.yml/badge.svg)](https://github.com/jermainewalkes/presencesync/actions/workflows/tests.yml)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20this%20project-ff5e5b.svg?logo=ko-fi&logoColor=white)](https://ko-fi.com/jwalkes)
 
 A menu-bar / system-tray app that keeps your **Microsoft Teams** presence and your
