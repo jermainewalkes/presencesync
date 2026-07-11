@@ -49,6 +49,7 @@ class TeamsClient:
         else:
             self._app = None
         self.token_expires_at: float = 0.0
+        self._session = requests.Session()
 
     # Auth
     def _account(self):
@@ -96,7 +97,7 @@ class TeamsClient:
 
     def _post(self, path: str, body: Optional[dict] = None) -> None:
         try:
-            resp = requests.post(
+            resp = self._session.post(
                 f"{constants.GRAPH_BASE}{path}", headers=self._headers(), json=body or {}, timeout=10
             )
         except requests.RequestException as exc:
@@ -109,7 +110,7 @@ class TeamsClient:
     # Presence
     def get_presence(self) -> TeamsPresence:
         try:
-            resp = requests.get(
+            resp = self._session.get(
                 f"{constants.GRAPH_BASE}/me/presence", headers=self._headers(), timeout=10
             )
         except requests.RequestException as exc:

@@ -6,13 +6,14 @@ A worker thread runs the blocking sync cycle; pystray renders state on demand.
 from __future__ import annotations
 
 import logging
+import random
 import threading
 import time
 
 import pystray
 from pystray import Menu, MenuItem
 
-from ..core import constants, single_instance
+from ..core import constants, credentials, single_instance
 from ..core.errors import PresenceSyncError
 from ..core.factory import build_engine
 from ..core.health import Health, HealthState, evaluate
@@ -153,11 +154,11 @@ class PresenceSyncTray:
             if health.state != old_state:
                 self.icon.icon = self._images[health.state]
             self.icon.title = f"{constants.APP_NAME}: {health.title}"
-            self._stop.wait(max(self.engine.settings.poll_interval_seconds, 1))
+            self._stop.wait(max(self.engine.settings.poll_interval_seconds, 1) + random.uniform(0, 3))
 
     def run(self) -> int:
         threading.Thread(target=self._worker_loop, name="sync-worker", daemon=True).start()
-        if not (self.engine.slack.is_connected() or self.engine.settings.slack_client_id):
+        if not (self.engine.slack.is_connected() or credentials.slack_client_id(self.engine.settings)):
             threading.Timer(1.0, lambda: settings.open_settings(self)).start()
         self.icon.run()
         return 0

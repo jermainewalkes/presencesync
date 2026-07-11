@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 import os
+import random
 import subprocess
 import threading
 import time
@@ -144,7 +145,7 @@ class PresenceSyncApp(rumps.App):
             with self._lock:
                 self._health = health
                 self._snapshot = snapshot
-            self._stop.wait(max(self.engine.settings.poll_interval_seconds, 1))
+            self._stop.wait(max(self.engine.settings.poll_interval_seconds, 1) + random.uniform(0, 3))
 
     # Main-thread UI refresh
     def _refresh_ui(self, _timer) -> None:
@@ -176,7 +177,9 @@ class PresenceSyncApp(rumps.App):
             if rumps.alert("Disconnect Slack?", "Stop syncing your Slack status?", ok="Disconnect", cancel="Cancel"):
                 self.engine.slack.sign_out()
         else:
-            self._connect_in_background(lambda: connect_slack(self.engine.slack.secrets), "Slack")
+            self._connect_in_background(
+                lambda: connect_slack(self.engine.slack.secrets, self.engine.settings), "Slack"
+            )
 
     def _connect_in_background(self, fn, label: str) -> None:
         def task() -> None:

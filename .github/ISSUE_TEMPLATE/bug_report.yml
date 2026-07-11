@@ -1,0 +1,68 @@
+name: Bug report
+description: Report something that is not working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please do not include tokens, secrets or
+        the contents of `org-config.json` anywhere in this report.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the problem, and what you expected instead.
+      placeholder: The Slack status did not clear when my Teams call ended...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start a Teams call
+        2. Watch the Slack status
+        3. End the call
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS
+        - Windows
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version
+      placeholder: "macOS 14.5 / Windows 11 23H2"
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: PresenceSync version
+      description: The release tag, or the commit if running from source.
+      placeholder: "v1.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: tray-state
+    attributes:
+      label: Tray icon state at the time
+      options:
+        - Running (plain glyph)
+        - Attention (amber dot)
+        - Action Needed (red dot)
+        - Not sure
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log lines
+      description: >
+        From `presencesync.log` (Open Logs in the tray menu). Paste only the relevant
+        lines and redact anything sensitive.
+      render: text

@@ -27,6 +27,7 @@ class SlackClient:
 
             settings = Settings.load()
         self.settings = settings
+        self._session = requests.Session()
 
     # Token state
     def _tokens(self) -> Optional[dict]:
@@ -34,6 +35,9 @@ class SlackClient:
 
     def is_connected(self) -> bool:
         return self._tokens() is not None
+
+    def has_refresh_token(self) -> bool:
+        return bool((self._tokens() or {}).get("refresh_token"))
 
     @property
     def token_expires_at(self) -> float:
@@ -64,7 +68,7 @@ class SlackClient:
             "refresh_token": refresh_token,
         }
         try:
-            resp = requests.post(f"{constants.SLACK_API}/oauth.v2.access", data=data, timeout=10)
+            resp = self._session.post(f"{constants.SLACK_API}/oauth.v2.access", data=data, timeout=10)
             payload = resp.json()
         except (requests.RequestException, ValueError) as exc:
             raise ApiError(f"Slack token refresh failed: {exc}") from exc
@@ -99,10 +103,13 @@ class SlackClient:
         if json_body is not None:
             headers["Content-Type"] = "application/json; charset=utf-8"
         try:
-            resp = requests.request(
+            resp = self._session.request(
                 verb, f"{constants.SLACK_API}/{method}",
                 headers=headers, params=params, json=json_body, timeout=10,
             )
+            if resp.status_code == 429:
+                retry = resp.headers.get("Retry-After", "")
+                raise ApiError(f"Slack {method} rate-limited" + (f"; retry after {retry}s" if retry else ""))
             payload = resp.json()
         except (requests.RequestException, ValueError) as exc:
             raise ApiError(f"Slack {method} failed: {exc}") from exc

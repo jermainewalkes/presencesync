@@ -53,6 +53,16 @@ class TeamsToSlackTests(unittest.TestCase):
         self.assertIsNotNone(plan.slack_status)
         self.assertTrue(plan.slack_status.is_clear)
 
+    def test_reasserts_after_external_clear(self):
+        rec = Reconciler()
+        step(rec, IN_A_CALL, NO_HUDDLE)  # sets "On a Teams call"
+        echoed = SlackProfile(in_huddle=False, status_text="On a Teams call", status_emoji=":headphones:")
+        self.assertIsNone(step(rec, IN_A_CALL, echoed).slack_status)  # reflected → no-op
+        # Cleared externally while still in the call → we must restore it.
+        cleared = SlackProfile(in_huddle=False, status_text="", status_emoji="")
+        plan = step(rec, IN_A_CALL, cleared)
+        self.assertEqual(plan.slack_status, SlackStatus("On a Teams call", ":headphones:"))
+
     def test_manual_slack_status_not_clobbered(self):
         rec = Reconciler()
         manual = SlackProfile(in_huddle=False, status_text="Lunch", status_emoji=":sandwich:")

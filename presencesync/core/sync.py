@@ -112,12 +112,17 @@ class Reconciler:
             slack_reason = "suppressed (Teams presence is self-injected)"
         elif self.settings.teams_to_slack and teams is not None:
             desired = self._desired_slack_status(teams)
+            # "Reflected" means Slack already shows exactly the desired status, so a
+            # write would be redundant. Comparing to the live profile (not just what we
+            # last pushed) means an externally cleared status is re-asserted.
+            reflected = (
+                (slack.status_text if slack else "") == desired.text
+                and (slack.status_emoji if slack else "") == desired.emoji
+            )
             if not self._slack_is_ours_or_empty(slack):
                 slack_reason = "manual Slack status present; leaving it alone"
-            elif desired == self._last_pushed_slack:
+            elif reflected:
                 slack_reason = "already up to date"
-            elif desired.is_clear and (slack is None or not slack.status_text):
-                slack_reason = "already clear"
             else:
                 slack_status = desired
                 slack_reason = (

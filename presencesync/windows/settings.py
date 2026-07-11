@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
+import queue
 import subprocess
 import threading
 import tkinter as tk
@@ -118,14 +119,27 @@ def _settings_dialog(app) -> None:
         s.save()
         app.rebuild_teams_client()
 
+    test_result: "queue.Queue[str]" = queue.Queue()
+
+    def poll_test_result():
+        try:
+            text = test_result.get_nowait()
+        except queue.Empty:
+            root.after(150, poll_test_result)
+        else:
+            result.config(text=text)
+
+    def work():
+        try:
+            test_result.put(diagnostics.test_connections(app.engine))
+        except Exception as exc:
+            log.exception("connection test failed")
+            test_result.put(f"Test failed: {exc}")
+
     def test():
         result.config(text="Testing...")
-
-        def work():
-            text = diagnostics.test_connections(app.engine)
-            root.after(0, lambda: result.config(text=text))
-
         threading.Thread(target=work, daemon=True).start()
+        root.after(150, poll_test_result)
 
     ttk.Button(f, text="Test Connection", command=test).grid(row=12, column=0, sticky="w")
     ttk.Button(f, text="Setup Guide", command=open_guide).grid(row=14, column=0, sticky="w")

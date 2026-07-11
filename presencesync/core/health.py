@@ -61,7 +61,7 @@ def evaluate(engine) -> Health:
 
     for name, client in (("Microsoft", engine.teams), ("Slack", engine.slack)):
         exp = getattr(client, "token_expires_at", 0) or 0
-        has_refresh = name == "Microsoft" or bool((engine.slack._tokens() or {}).get("refresh_token"))
+        has_refresh = name == "Microsoft" or engine.slack.has_refresh_token()
         if exp and not has_refresh and exp - now < _EXPIRY_WARN_SECONDS:
             detail.append(f"{name} sign-in expires soon")
 

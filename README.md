@@ -114,7 +114,7 @@ secret. It is gitignored so it cannot be committed by accident.
 ## Development
 
 ```bash
-./venv/bin/python -m unittest discover -s tests -v   # 43 tests, no network needed
+./venv/bin/python -m unittest discover -s tests -v   # 46 tests, no network needed
 ```
 
 Layout: [`presencesync/core`](presencesync/core) (engine, reconciler, API clients,

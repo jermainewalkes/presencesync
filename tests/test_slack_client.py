@@ -17,8 +17,8 @@ from presencesync.core.models import SlackStatus  # noqa: E402
 from presencesync.core.slack_client import SlackClient  # noqa: E402
 from presencesync.core.store import Settings  # noqa: E402
 
-POST = "presencesync.core.slack_client.requests.post"
-REQUEST = "presencesync.core.slack_client.requests.request"
+POST = "requests.Session.post"
+REQUEST = "requests.Session.request"
 
 
 class FakeSecrets:
@@ -117,6 +117,11 @@ class TokenRefreshTests(unittest.TestCase):
         with self.assertRaises(NeedsAuth):
             make_client(None)._access_token()
 
+    def test_has_refresh_token(self):
+        self.assertTrue(make_client({"access_token": "t", "refresh_token": "r"}).has_refresh_token())
+        self.assertFalse(make_client({"access_token": "t"}).has_refresh_token())
+        self.assertFalse(make_client(None).has_refresh_token())
+
 
 class ApiTests(unittest.TestCase):
     def _static(self):
@@ -141,6 +146,14 @@ class ApiTests(unittest.TestCase):
 
     def test_other_error_maps_to_api_error(self):
         with mock.patch(REQUEST, return_value=resp({"ok": False, "error": "ratelimited"})):
+            with self.assertRaises(ApiError):
+                self._static().get_profile()
+
+    def test_rate_limited_maps_to_api_error(self):
+        m = mock.Mock()
+        m.status_code = 429
+        m.headers = {"Retry-After": "30"}
+        with mock.patch(REQUEST, return_value=m):
             with self.assertRaises(ApiError):
                 self._static().get_profile()
 

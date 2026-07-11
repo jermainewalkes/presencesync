@@ -12,9 +12,10 @@ _lock_file = None
 def acquire() -> bool:
     """Try to take the app-wide lock. Returns False if another instance holds it."""
     global _lock_file
-    os.makedirs(constants.APP_SUPPORT_DIR, exist_ok=True)
-    _lock_file = open(os.path.join(constants.APP_SUPPORT_DIR, "presencesync.lock"), "w")
     try:
+        os.makedirs(constants.APP_SUPPORT_DIR, exist_ok=True)
+        _lock_file = open(os.path.join(constants.APP_SUPPORT_DIR, "presencesync.lock"), "a")
+        _lock_file.seek(0)
         if os.name == "nt":
             import msvcrt
 
