@@ -151,7 +151,7 @@ class SettingsController(NSObject):
     def _build(self):
         s = self._settings()
         secret_set = bool(self._secrets().get_slack_client_secret())
-        H = 580
+        H = 614
         view = NSView.alloc().initWithFrame_(_rect(0, 0, W, H))
         add = view.addSubview_
 
@@ -209,9 +209,11 @@ class SettingsController(NSObject):
 
         # Sync directions
         header("Sync")
-        yy = row(gap=16)
+        yy = row()
         add(_checkbox("Teams → Slack", PAD, yy, (W - 2 * PAD) / 2, s.teams_to_slack, self, "toggleT2S:"))
         add(_checkbox("Slack → Teams", PAD + (W - 2 * PAD) / 2, yy, (W - 2 * PAD) / 2, s.slack_to_teams, self, "toggleS2T:"))
+        yy = row(gap=16)
+        add(_checkbox("Check for Updates Automatically", PAD, yy, W - 2 * PAD, s.auto_check_updates, self, "toggleAutoUpdate:"))
 
         add(_separator(y[0] + ROW - 2))
 
@@ -308,6 +310,11 @@ class SettingsController(NSObject):
     def toggleS2T_(self, sender):
         if self._app is not None:
             self._app.set_direction("slack_to_teams", bool(sender.state()))
+
+    def toggleAutoUpdate_(self, sender):
+        s = self._settings()
+        s.auto_check_updates = bool(sender.state())
+        s.save()
 
     def close_(self, sender):
         if self.window is not None:

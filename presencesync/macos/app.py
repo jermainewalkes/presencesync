@@ -16,7 +16,7 @@ import rumps
 from AppKit import NSApplication, NSApplicationActivationPolicyAccessory
 
 from . import login_item
-from ..core import constants, credentials
+from ..core import constants, credentials, updates
 from ..core.errors import PresenceSyncError
 from ..core.factory import build_engine
 from ..core.health import Health, HealthState, evaluate
@@ -53,6 +53,7 @@ class PresenceSyncApp(rumps.App):
         self._settings_controller = None
         self._statuses_controller = None
         self._onboarded = False
+        self._update = None
 
         self._build_menu()
         self._apply_icon(HealthState.ERROR)
@@ -67,6 +68,7 @@ class PresenceSyncApp(rumps.App):
     # Menu construction
     def _build_menu(self) -> None:
         self.status_item = rumps.MenuItem("Starting…")
+        self.update_item = rumps.MenuItem("Update Available…", callback=self._on_update_click)
         self.ms_item = rumps.MenuItem("Microsoft: …", callback=self._on_ms_click)
         self.slack_item = rumps.MenuItem("Slack: …", callback=self._on_slack_click)
         self.t2s_item = rumps.MenuItem("Sync Teams → Slack", callback=self._toggle_t2s)
@@ -75,6 +77,7 @@ class PresenceSyncApp(rumps.App):
         self.login_toggle = rumps.MenuItem("Start at Login", callback=self._toggle_login)
         self.menu = [
             self.status_item,
+            self.update_item,
             None,
             self.ms_item,
             self.slack_item,
@@ -92,6 +95,7 @@ class PresenceSyncApp(rumps.App):
             rumps.MenuItem(f"Quit {constants.APP_NAME}", callback=self._quit),
         ]
         self._sync_toggle_states()
+        self.update_item._menuitem.setHidden_(True)
 
     def _sync_toggle_states(self) -> None:
         s = self.engine.settings
@@ -142,9 +146,16 @@ class PresenceSyncApp(rumps.App):
             except Exception:
                 log.exception("health evaluation failed")
                 health, snapshot = self._health, self._snapshot
+            update = None
+            try:
+                update = updates.check(self.engine.settings)
+            except Exception:
+                log.exception("update check failed")
             with self._lock:
                 self._health = health
                 self._snapshot = snapshot
+                if update is not None:
+                    self._update = update
             self._stop.wait(max(self.engine.settings.poll_interval_seconds, 1) + random.uniform(0, 3))
 
     # Main-thread UI refresh
@@ -152,7 +163,9 @@ class PresenceSyncApp(rumps.App):
         with self._lock:
             health = self._health
             snap = dict(self._snapshot)
+            update = self._update
         self._apply_icon(health.state)
+        self._show_update(update)
         if snap.get("last_success"):
             line = f"{health.title} · {_ago(int(time.time() - snap['last_success']))}"
         else:
@@ -163,6 +176,40 @@ class PresenceSyncApp(rumps.App):
         if not self._onboarded:
             self._onboarded = True
             self._maybe_onboard()
+
+    # Self-update
+    def _show_update(self, update) -> None:
+        if update is None:
+            return
+        self.update_item.title = f"Update Available ({update.tag})…"
+        self.update_item._menuitem.setHidden_(False)
+        s = self.engine.settings
+        if s.last_update_notified != update.tag:
+            s.last_update_notified = update.tag
+            s.save()
+            self._notify("Update Available", f"PresenceSync {update.tag} is ready — update from the menu.")
+
+    def _on_update_click(self, _item) -> None:
+        update = self._update
+        if update is None:
+            return
+        if not updates.can_apply():
+            subprocess.run(["open", update.url], check=False)
+            return
+        if rumps.alert(f"Update to {update.tag}?", "PresenceSync will restart after updating.",
+                       ok="Update", cancel="Cancel"):
+            threading.Thread(target=self._apply_update, name="self-update", daemon=True).start()
+
+    def _apply_update(self) -> None:
+        try:
+            updates.apply_update()
+        except Exception as exc:
+            log.exception("update failed")
+            self._notify("Update Failed", str(exc))
+            return
+        self._notify("Updated", "Restarting…")
+        self._stop.set()
+        updates.restart_app()
 
     # Connect / disconnect
     def _on_ms_click(self, _item) -> None:

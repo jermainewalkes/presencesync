@@ -9,11 +9,12 @@ import logging
 import random
 import threading
 import time
+import webbrowser
 
 import pystray
 from pystray import Menu, MenuItem
 
-from ..core import constants, credentials, single_instance
+from ..core import constants, credentials, single_instance, updates
 from ..core.errors import PresenceSyncError
 from ..core.factory import build_engine
 from ..core.health import Health, HealthState, evaluate
@@ -36,6 +37,7 @@ class PresenceSyncTray:
         self.engine = build_engine()
         self._lock = threading.Lock()
         self._health = Health(HealthState.ERROR, "Starting")
+        self._update = None
         self._images = {state: icons.make_image(state) for state in HealthState}
         self.icon = pystray.Icon(constants.APP_NAME, self._images[HealthState.ERROR],
                                  constants.APP_NAME, menu=self._menu())
@@ -46,6 +48,8 @@ class PresenceSyncTray:
     def _menu(self) -> Menu:
         return Menu(
             MenuItem(self._status_text, None, enabled=False),
+            MenuItem(lambda item: f"Update Available ({self._update.tag})..." if self._update else "Update",
+                     self._on_update, visible=lambda item: self._update is not None),
             Menu.SEPARATOR,
             MenuItem(lambda item: "Microsoft: Connected" if self.engine.teams.is_connected() else "Connect Microsoft...",
                      self._on_microsoft),
@@ -138,6 +142,31 @@ class PresenceSyncTray:
         self._stop.set()
         self.icon.stop()
 
+    # Self-update
+
+    def _on_update(self, icon, item) -> None:
+        update = self._update
+        if update is None:
+            return
+        if not updates.can_apply():
+            webbrowser.open(update.url)
+            return
+
+        def task():
+            self._notify("Updating PresenceSync...")
+            try:
+                updates.apply_update()
+            except Exception as exc:
+                log.exception("update failed")
+                self._notify(f"Update failed: {exc}")
+                return
+            self._notify("Updated - restarting")
+            self._stop.set()
+            self.icon.stop()
+            updates.restart_app()
+
+        threading.Thread(target=task, name="self-update", daemon=True).start()
+
     # Worker
 
     def _worker_loop(self) -> None:
@@ -148,11 +177,26 @@ class PresenceSyncTray:
             except Exception:
                 log.exception("sync tick failed")
                 health = Health(HealthState.ERROR, "Sync error")
+            update = None
+            try:
+                update = updates.check(self.engine.settings)
+            except Exception:
+                log.exception("update check failed")
             with self._lock:
                 old_state = self._health.state
                 self._health = health
+                new_update = update is not None and update != self._update
+                if update is not None:
+                    self._update = update
             if health.state != old_state:
                 self.icon.icon = self._images[health.state]
+            if new_update:
+                self.icon.update_menu()
+                s = self.engine.settings
+                if s.last_update_notified != update.tag:
+                    s.last_update_notified = update.tag
+                    s.save()
+                    self._notify(f"PresenceSync {update.tag} is available - update from the menu")
             self.icon.title = f"{constants.APP_NAME}: {health.title}"
             self._stop.wait(max(self.engine.settings.poll_interval_seconds, 1) + random.uniform(0, 3))
 

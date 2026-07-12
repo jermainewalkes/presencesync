@@ -6,12 +6,17 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from dataclasses import asdict, dataclass, fields
 
 import keyring
 
 from . import constants
 from .sync import SyncSettings
+
+# Serialises concurrent saves (worker-thread update check vs UI threads) so two
+# writers never interleave into the shared temp file.
+_save_lock = threading.Lock()
 # Settings — non-secret, user-editable only through the app UI.
 @dataclass
 class Settings:
@@ -28,6 +33,10 @@ class Settings:
     # Custom Slack status per category + the huddle message (empty/None = defaults).
     status_map: dict = None  # type: ignore[assignment]
     huddle_message: str = ""
+    # Self-update: daily GitHub release check (see core/updates.py).
+    auto_check_updates: bool = True
+    last_update_check: float = 0.0
+    last_update_notified: str = ""
 
     @classmethod
     def load(cls) -> "Settings":
@@ -40,11 +49,12 @@ class Settings:
         return cls(**{k: v for k, v in data.items() if k in known})
 
     def save(self) -> None:
-        os.makedirs(constants.APP_SUPPORT_DIR, exist_ok=True)
-        tmp = constants.SETTINGS_PATH + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(asdict(self), f, indent=2)
-        os.replace(tmp, constants.SETTINGS_PATH)
+        with _save_lock:
+            os.makedirs(constants.APP_SUPPORT_DIR, exist_ok=True)
+            tmp = constants.SETTINGS_PATH + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(asdict(self), f, indent=2)
+            os.replace(tmp, constants.SETTINGS_PATH)
 
     def to_sync_settings(self) -> SyncSettings:
         overrides = self.status_map or {}

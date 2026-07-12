@@ -99,9 +99,17 @@ def _settings_dialog(app) -> None:
     ttk.Checkbutton(f, text="Sync Slack to Teams", variable=s2t,
                     command=lambda: app.set_direction("slack_to_teams", s2t.get())).grid(row=10, column=1, sticky="w")
 
-    ttk.Separator(f).grid(row=11, column=0, columnspan=3, sticky="we", pady=8)
+    def set_auto_update():
+        s.auto_check_updates = auto_update.get()
+        s.save()
+
+    auto_update = tk.BooleanVar(value=s.auto_check_updates)
+    ttk.Checkbutton(f, text="Check for Updates Automatically", variable=auto_update,
+                    command=set_auto_update).grid(row=11, column=0, columnspan=2, sticky="w")
+
+    ttk.Separator(f).grid(row=12, column=0, columnspan=3, sticky="we", pady=8)
     result = ttk.Label(f, text="", wraplength=420, justify="left")
-    result.grid(row=13, column=0, columnspan=3, sticky="w", pady=(4, 8))
+    result.grid(row=14, column=0, columnspan=3, sticky="w", pady=(4, 8))
 
     def refresh_status():
         ms_status.config(text="Microsoft: Connected" if app.engine.teams.is_connected() else "Microsoft: Not Connected")
@@ -141,10 +149,10 @@ def _settings_dialog(app) -> None:
         threading.Thread(target=work, daemon=True).start()
         root.after(150, poll_test_result)
 
-    ttk.Button(f, text="Test Connection", command=test).grid(row=12, column=0, sticky="w")
-    ttk.Button(f, text="Setup Guide", command=open_guide).grid(row=14, column=0, sticky="w")
-    ttk.Button(f, text="Save", command=save).grid(row=14, column=2, sticky="e")
-    ttk.Button(f, text="Close", command=root.destroy).grid(row=14, column=1, sticky="e")
+    ttk.Button(f, text="Test Connection", command=test).grid(row=13, column=0, sticky="w")
+    ttk.Button(f, text="Setup Guide", command=open_guide).grid(row=15, column=0, sticky="w")
+    ttk.Button(f, text="Save", command=save).grid(row=15, column=2, sticky="e")
+    ttk.Button(f, text="Close", command=root.destroy).grid(row=15, column=1, sticky="e")
 
     refresh_status()
     root.mainloop()

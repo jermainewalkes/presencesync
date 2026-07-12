@@ -27,3 +27,24 @@ def acquire() -> bool:
         return True
     except OSError:
         return False
+
+
+def release() -> None:
+    """Drop the lock (used before relaunching after a self-update)."""
+    global _lock_file
+    if _lock_file is None:
+        return
+    try:
+        if os.name == "nt":
+            import msvcrt
+
+            _lock_file.seek(0)
+            msvcrt.locking(_lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(_lock_file, fcntl.LOCK_UN)
+        _lock_file.close()
+    except OSError:
+        pass
+    _lock_file = None

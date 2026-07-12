@@ -67,6 +67,10 @@ On first run the Settings window opens: enter your IDs, **Save**, then
 **Connect Microsoft** and **Connect Slack** (each opens a browser sign-in).
 Click **Test Connection** to confirm, and enable **Start at Login** from the menu.
 
+PresenceSync checks GitHub once a day for new releases: when one is available an
+**Update Available** item appears in the menu, and one click pulls the update and
+restarts the app. Turn the check off in Settings if you prefer to update manually.
+
 Headless/dev usage:
 ```bash
 ./venv/bin/python main.py --once --dry-run   # show what one cycle would do
@@ -114,7 +118,7 @@ secret. It is gitignored so it cannot be committed by accident.
 ## Development
 
 ```bash
-./venv/bin/python -m unittest discover -s tests -v   # 46 tests, no network needed
+./venv/bin/python -m unittest discover -s tests -v   # 63 tests, no network needed
 ```
 
 Layout: [`presencesync/core`](presencesync/core) (engine, reconciler, API clients,

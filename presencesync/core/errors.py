@@ -11,3 +11,7 @@ class NeedsAuth(PresenceSyncError):
 
 class ApiError(PresenceSyncError):
     """A Graph or Slack API call failed (network, 5xx, or an `ok: false` response)."""
+
+
+class UpdateError(PresenceSyncError):
+    """A self-update could not be applied; the user should update manually."""
